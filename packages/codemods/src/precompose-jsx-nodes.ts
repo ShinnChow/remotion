@@ -1,11 +1,4 @@
-import {
-	VISITOR_KEYS,
-	isReferenced,
-	type File,
-	type JSXElement,
-	type JSXFragment,
-	type Node,
-} from '@babel/types';
+import type {File, JSXElement, JSXFragment, Node} from '@babel/types';
 import * as recast from 'recast';
 import type {SequenceNodePath} from 'remotion';
 import {addComposition} from './add-composition';
@@ -62,6 +55,78 @@ type PrecompositionPlan = {
 	selectedSequence: JSXElement | null;
 	sequenceDuration: number | null;
 	start: number;
+};
+
+const isReferenced = (
+	node: Node,
+	parent: Node,
+	grandparent?: Node,
+): boolean => {
+	switch (parent.type) {
+		case 'MemberExpression':
+		case 'OptionalMemberExpression':
+			return parent.property === node
+				? Boolean(parent.computed)
+				: parent.object === node;
+		case 'JSXMemberExpression':
+			return parent.object === node;
+		case 'VariableDeclarator':
+			return parent.init === node;
+		case 'ArrowFunctionExpression':
+			return parent.body === node;
+		case 'PrivateName':
+			return false;
+		case 'ClassMethod':
+		case 'ClassPrivateMethod':
+		case 'ObjectMethod':
+			return parent.key === node ? Boolean(parent.computed) : false;
+		case 'ObjectProperty':
+			return parent.key === node
+				? parent.computed
+				: grandparent?.type !== 'ObjectPattern';
+		case 'ClassProperty':
+		case 'ClassAccessorProperty':
+			return parent.key === node ? Boolean(parent.computed) : true;
+		case 'ClassPrivateProperty':
+			return parent.key !== node;
+		case 'ClassDeclaration':
+		case 'ClassExpression':
+			return parent.superClass === node;
+		case 'AssignmentExpression':
+		case 'AssignmentPattern':
+			return parent.right === node;
+		case 'LabeledStatement':
+		case 'CatchClause':
+		case 'RestElement':
+		case 'BreakStatement':
+		case 'ContinueStatement':
+		case 'FunctionDeclaration':
+		case 'FunctionExpression':
+		case 'ExportNamespaceSpecifier':
+		case 'ExportDefaultSpecifier':
+		case 'ImportDefaultSpecifier':
+		case 'ImportNamespaceSpecifier':
+		case 'ImportSpecifier':
+		case 'ImportAttribute':
+		case 'JSXAttribute':
+		case 'ObjectPattern':
+		case 'ArrayPattern':
+		case 'MetaProperty':
+			return false;
+		case 'ExportSpecifier':
+			return grandparent?.type === 'ExportNamedDeclaration' &&
+				grandparent.source
+				? false
+				: parent.local === node;
+		case 'ObjectTypeProperty':
+			return parent.key !== node;
+		case 'TSEnumMember':
+			return parent.id !== node;
+		case 'TSPropertySignature':
+			return parent.key === node ? Boolean(parent.computed) : true;
+		default:
+			return true;
+	}
 };
 
 const getPrecompositionPlan = ({
@@ -528,34 +593,23 @@ const getPrecompositionPlan = ({
 		'TSInstantiationExpression',
 		'TSTypeParameterInstantiation',
 	]);
-	const containsUnsupportedSyntax = (node: Node): boolean => {
-		if (unsupportedSyntax.has(node.type)) {
-			return true;
-		}
-
-		return (VISITOR_KEYS[node.type] ?? []).some((key) => {
-			const child = (node as unknown as Record<string, unknown>)[key];
-			if (Array.isArray(child)) {
-				return child.some(
-					(item) =>
-						item !== null &&
-						typeof item === 'object' &&
-						'type' in item &&
-						containsUnsupportedSyntax(item as Node),
-				);
-			}
-
-			return (
-				child !== null &&
-				typeof child === 'object' &&
-				'type' in child &&
-				containsUnsupportedSyntax(child as Node)
-			);
-		});
-	};
-
 	const scanSafePath = (path: recast.types.NodePath) => {
-		if (containsUnsupportedSyntax(path.node as Node)) {
+		let containsUnsupportedSyntax = false;
+		recast.visit(path as unknown as Parameters<typeof recast.visit>[0], {
+			visitNode(p) {
+				if (unsupportedSyntax.has(p.node.type)) {
+					containsUnsupportedSyntax = true;
+					return false;
+				}
+
+				if (containsUnsupportedSyntax) {
+					return false;
+				}
+
+				this.traverse(p);
+			},
+		});
+		if (containsUnsupportedSyntax) {
 			unsafeReason = 'The selected JSX contains unsupported syntax';
 			return;
 		}

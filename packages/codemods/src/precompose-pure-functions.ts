@@ -1,11 +1,10 @@
-import {
-	isExpression,
-	type Node,
-	type File,
-	type ArrowFunctionExpression,
-	type FunctionDeclaration,
-	type FunctionExpression,
-	type Expression,
+import type {
+	Node,
+	File,
+	ArrowFunctionExpression,
+	FunctionDeclaration,
+	FunctionExpression,
+	Expression,
 } from '@babel/types';
 import * as recast from 'recast';
 
@@ -330,7 +329,7 @@ export const getPureTopLevelFunctionAnalysis = ({
 	};
 
 	function isPureExpression(node: Node, params: Set<string>): boolean {
-		if (!isExpression(node)) {
+		if (!recast.types.namedTypes.Expression.check(node)) {
 			return false;
 		}
 
@@ -535,7 +534,7 @@ export const getPureTopLevelFunctionAnalysis = ({
 	};
 
 	function isPrimitiveExpression(node: Node, params: Set<string>): boolean {
-		if (!isExpression(node)) {
+		if (!recast.types.namedTypes.Expression.check(node)) {
 			return false;
 		}
 
