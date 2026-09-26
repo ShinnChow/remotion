@@ -1559,6 +1559,8 @@ export const precomposeJsxNodes = <Project extends CodemodProject>({
 		throw new Error('Could not choose a unique composition name');
 	}
 
+	occupiedNames.add(name);
+
 	const frameProps = hookProps.filter((prop) => prop.kind === 'frame');
 	const resolvedProps = hookProps
 		.filter((prop) => prop.kind !== 'frame')

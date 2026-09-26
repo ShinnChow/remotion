@@ -11,6 +11,7 @@ import type {ApiHandler} from '../api-types';
 import {formatLogFileLocation} from '../format-log-file-location';
 import {broadcastSequenceNodePathMutation} from '../sequence-node-path-mutation';
 import {
+	discardLastUndoEntryAfterFailedCommit,
 	printUndoHint,
 	pushTransactionToUndoStack,
 	suppressUndoStackInvalidation,
@@ -36,6 +37,13 @@ export const precomposeJsxNodesHandler: ApiHandler<
 	logLevel,
 }) =>
 	withSourceFileWriteQueue((): Promise<PrecomposeJsxNodesResponse> => {
+		const attemptedWrites: Array<{
+			filePath: string;
+			previousContents: string;
+			nextContents: string;
+			skipSequencePropsUpdate: boolean;
+		}> = [];
+		let undoEntryPushed = false;
 		try {
 			if (nodes.length === 0) {
 				throw new Error('No JSX sequences were selected');
@@ -135,10 +143,6 @@ export const precomposeJsxNodesHandler: ApiHandler<
 			const mutationFiles = remappingsByFile.filter(
 				({remappings}) => remappings.length > 0,
 			);
-			const nodePathMutation =
-				mutationFiles.length === 0
-					? null
-					: broadcastSequenceNodePathMutation(mutationFiles, null);
 			pushTransactionToUndoStack({
 				snapshots: changes.map((change) => {
 					const remappings = remappingsByFile.find(
@@ -166,21 +170,29 @@ export const precomposeJsxNodesHandler: ApiHandler<
 					redoRoute: `/${result.newCompositionId}`,
 				},
 			});
+			undoEntryPushed = true;
 			for (const change of changes) {
-				const output = change.nextContents;
-				if (output === null) {
+				const {nextContents: output, previousContents} = change;
+				if (output === null || previousContents === null) {
 					throw new Error('Could not write a pre-composed source file');
 				}
 
+				const skipSequencePropsUpdate = remappingsByFile.some(
+					({absolutePath: filePath, remappings}) =>
+						filePath === change.filePath && remappings.length > 0,
+				);
+				attemptedWrites.push({
+					filePath: change.filePath,
+					previousContents,
+					nextContents: output,
+					skipSequencePropsUpdate,
+				});
 				suppressUndoStackInvalidation(change.filePath);
 				writeFileAndNotifyFileWatchers({
 					file: change.filePath,
 					content: output,
 					originatorClientId: undefined,
-					metadata: remappingsByFile.some(
-						({absolutePath: filePath, remappings}) =>
-							filePath === change.filePath && remappings.length > 0,
-					)
+					metadata: skipSequencePropsUpdate
 						? {skipSequencePropsUpdate: true}
 						: null,
 				});
@@ -209,6 +221,11 @@ export const precomposeJsxNodesHandler: ApiHandler<
 			}
 
 			printUndoHint(logLevel);
+			const nodePathMutation =
+				mutationFiles.length === 0
+					? null
+					: broadcastSequenceNodePathMutation(mutationFiles, null);
+
 			return Promise.resolve({
 				success: true,
 				canPrecompose: true,
@@ -217,6 +234,30 @@ export const precomposeJsxNodesHandler: ApiHandler<
 				newCompositionId: result.newCompositionId,
 			});
 		} catch (err) {
+			for (const change of attemptedWrites.reverse()) {
+				try {
+					if (readFileSync(change.filePath, 'utf-8') !== change.nextContents) {
+						continue;
+					}
+
+					suppressUndoStackInvalidation(change.filePath);
+					writeFileAndNotifyFileWatchers({
+						file: change.filePath,
+						content: change.previousContents,
+						originatorClientId: undefined,
+						metadata: change.skipSequencePropsUpdate
+							? {skipSequencePropsUpdate: true}
+							: null,
+					});
+				} catch {
+					// Preserve subsequent edits and the original pre-compose error.
+				}
+			}
+
+			if (undoEntryPushed) {
+				discardLastUndoEntryAfterFailedCommit();
+			}
+
 			return Promise.resolve({
 				success: false,
 				reason: (err as Error).message,
