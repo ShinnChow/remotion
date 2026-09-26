@@ -70,7 +70,7 @@ export const defaultKeyboardShortcuts: Record<
 		{key: 'z', commandOrControl: true, shift: true},
 	],
 	selectAllSequenceRows: [{key: 'a', commandOrControl: true}],
-	selectTranslateProp: [{key: 'p'}],
+	selectTranslateProp: [{key: 'p', shift: false}],
 	selectOpacityProp: [{key: 't'}],
 	selectRotateProp: [{key: 'r', shift: false}],
 	selectScaleProp: [{key: 's'}],
