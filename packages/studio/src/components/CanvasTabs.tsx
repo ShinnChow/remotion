@@ -42,6 +42,7 @@ import {isSupportedDropEvent} from './drop-handler-data';
 import {useSelectComposition} from './InitialCompositionLoader';
 import {InlineAction} from './InlineAction';
 import {HORIZONTAL_SCROLLBAR_CLASSNAME} from './Menu/is-menu-item';
+import {CancelIcon} from './NewComposition/CancelButton';
 import type {ComboboxValue} from './NewComposition/ComboBox';
 import {
 	getDraggedRenderOutputCanvasContent,
@@ -201,9 +202,7 @@ const tooltipTitleStyle: React.CSSProperties = {
 
 const closeStyle: React.CSSProperties = {
 	flexShrink: 0,
-	fontSize: 18,
 	height: 20,
-	lineHeight: '20px',
 	width: 20,
 };
 
@@ -460,7 +459,7 @@ const CanvasTab: React.FC<{
 					event.stopPropagation();
 					onClose();
 				}}
-				renderAction={() => '×'}
+				renderAction={() => <CancelIcon height={20} width={20} />}
 				style={closeStyle}
 				variant={null}
 			/>
