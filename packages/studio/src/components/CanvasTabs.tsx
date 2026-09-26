@@ -43,6 +43,10 @@ import {useSelectComposition} from './InitialCompositionLoader';
 import {InlineAction} from './InlineAction';
 import {HORIZONTAL_SCROLLBAR_CLASSNAME} from './Menu/is-menu-item';
 import type {ComboboxValue} from './NewComposition/ComboBox';
+import {
+	getDraggedRenderOutputCanvasContent,
+	RENDER_OUTPUT_TAB_DRAG_MIME_TYPE,
+} from './RenderQueue/use-render-output-file-drag';
 import {Tab, Tabs} from './Tabs';
 import {useResolvedStack} from './Timeline/use-resolved-stack';
 import {useOpenInMenuApps} from './use-open-in-menu-apps';
@@ -697,12 +701,13 @@ export const CanvasTabs: React.FC = () => {
 						: targetIndex,
 				);
 			} else {
+				const dragTypes = Array.from(event.dataTransfer.types);
 				const isAsset =
-					StudioProtocolInternals.getDragPreviewMetadata(
-						event.dataTransfer.types,
-					)?.type === 'asset';
+					StudioProtocolInternals.getDragPreviewMetadata(dragTypes)?.type ===
+					'asset';
 				if (
 					!isAsset &&
+					!dragTypes.includes(RENDER_OUTPUT_TAB_DRAG_MIME_TYPE) &&
 					getCompositionDragPreviewMetadata(event.dataTransfer.types) === null
 				) {
 					setDropIndex(null);
@@ -774,7 +779,20 @@ export const CanvasTabs: React.FC = () => {
 
 			const compositionDrag = parseCompositionDragData(event.dataTransfer);
 			let content: CanvasContent;
-			if (compositionDrag !== null) {
+			if (
+				Array.from(event.dataTransfer.types).includes(
+					RENDER_OUTPUT_TAB_DRAG_MIME_TYPE,
+				)
+			) {
+				const renderOutput = getDraggedRenderOutputCanvasContent(
+					event.dataTransfer,
+				);
+				if (renderOutput === null) {
+					return;
+				}
+
+				content = renderOutput;
+			} else if (compositionDrag !== null) {
 				const composition = compositions.find(
 					(item) => item.id === compositionDrag.compositionId,
 				);
