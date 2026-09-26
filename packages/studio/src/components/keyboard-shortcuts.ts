@@ -51,6 +51,7 @@ export const defaultKeyboardShortcuts: Record<
 	toggleSnapping: [{key: 'm', shift: true}],
 	toggleOutlines: [{key: 'o', shift: true}],
 	toggleRulersAndGuides: [{key: 'r', shift: true}],
+	togglePixelGrid: [{key: 'p', shift: true}],
 	previousComposition: [{key: 'PageUp'}],
 	nextComposition: [{key: 'PageDown'}],
 	showKeyboardShortcuts: [{key: '?', shift: true}],
@@ -137,6 +138,7 @@ export const keyboardShortcutGroups: readonly KeyboardShortcutGroup[] = [
 			shortcut('Enable snapping', 'toggleSnapping'),
 			shortcut('Outlines', 'toggleOutlines'),
 			shortcut('Rulers and guides', 'toggleRulersAndGuides'),
+			shortcut('Pixel grid', 'togglePixelGrid'),
 		],
 	},
 	{

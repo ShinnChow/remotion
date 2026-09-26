@@ -16,6 +16,7 @@ export const studioKeyboardShortcutActions = [
 	'toggleSnapping',
 	'toggleOutlines',
 	'toggleRulersAndGuides',
+	'togglePixelGrid',
 	'previousComposition',
 	'nextComposition',
 	'showKeyboardShortcuts',
