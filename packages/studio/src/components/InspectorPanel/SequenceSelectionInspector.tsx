@@ -52,6 +52,7 @@ import {
 	SequenceInspectorHeader,
 	useSequenceInspectorSourceLocation,
 } from './SequenceInspectorHeader';
+import {SequencePrecomposeAction} from './SequencePrecomposeAction';
 import {SequenceWrapAction} from './SequenceWrapAction';
 import {selectedContainer} from './styles';
 import {useTrackForSelection} from './use-track-for-selection';
@@ -359,6 +360,17 @@ const SequenceSourceQuickActions: React.FC<{
 				sourceActionsDisabled={sourceActionsDisabled}
 				sourceLocation={validatedLocation}
 			/>
+			<SequencePrecomposeAction
+				targets={[
+					{
+						nodePathInfo: selection.nodePathInfo,
+						displayName: track.sequence.displayName,
+						line: validatedLocation.line,
+						singleChildComponent: track.sequence.singleChildComponent,
+					},
+				]}
+				sourceActionsDisabled={sourceActionsDisabled}
+			/>
 			<InspectorQuickAction
 				disabled={sourceActionsDisabled}
 				iconContainerStyle={largeInspectorActionIconContainerStyle}
@@ -488,7 +500,32 @@ const SequenceExpandedInspector: React.FC<{
 					</CollapsibleInspectorSection>
 				</>
 			) : (
-				<InspectorMessage>Source controls unavailable</InspectorMessage>
+				<>
+					<InspectorMessage>Source controls unavailable</InspectorMessage>
+					<CollapsibleInspectorSection
+						collapsible
+						label="Actions"
+						sectionId="sequence-actions"
+					>
+						<InspectorQuickActionsSection>
+							<SequencePrecomposeAction
+								targets={[
+									{
+										nodePathInfo: sequenceSelection.nodePathInfo,
+										displayName: track.sequence.displayName,
+										line: null,
+										singleChildComponent: track.sequence.singleChildComponent,
+									},
+								]}
+								sourceActionsDisabled={
+									previewServerState.type !== 'connected' ||
+									readOnlyStudio ||
+									!isStudioInteractivityEnabled()
+								}
+							/>
+						</InspectorQuickActionsSection>
+					</CollapsibleInspectorSection>
+				</>
 			)}
 		</div>
 	);

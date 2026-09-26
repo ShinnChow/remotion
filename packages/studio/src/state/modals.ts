@@ -288,6 +288,14 @@ export type ModalState =
 			};
 	  }
 	| {
+			type: 'precompose-refactor';
+			targets: {
+				fileName: string;
+				displayName: string | null;
+				line: number | null;
+			}[];
+	  }
+	| {
 			type: 'generate-with-agent';
 			location: {
 				source: string;
