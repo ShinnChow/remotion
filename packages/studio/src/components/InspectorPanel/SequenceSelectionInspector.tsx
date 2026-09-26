@@ -121,9 +121,11 @@ const SplitSequenceQuickAction: React.FC<{
 const SequenceSourceQuickActions: React.FC<{
 	readonly selection: Extract<TimelineSelection, {type: 'sequence'}>;
 	readonly track: TimelineTrackData;
-	readonly validatedSource: string;
-	readonly sourceLine: number;
-}> = ({selection, track, validatedSource, sourceLine}) => {
+	readonly validatedLocation: {
+		readonly source: string;
+		readonly line: number;
+	};
+}> = ({selection, track, validatedLocation}) => {
 	const timelinePosition = Internals.Timeline.useTimelinePosition();
 	const {previewServerState} = useContext(StudioServerConnectionCtx);
 	const {setSelectedModal} = useContext(SetSelectedModalContext);
@@ -150,7 +152,7 @@ const SequenceSourceQuickActions: React.FC<{
 		sequenceFrameOffset: track.sequenceFrameOffset,
 		setPropStatuses,
 		timelinePosition,
-		validatedSource,
+		validatedSource: validatedLocation.source,
 	});
 	const sourceActionsDisabled =
 		previewServerState.type !== 'connected' || !isStudioInteractivityEnabled();
@@ -356,13 +358,14 @@ const SequenceSourceQuickActions: React.FC<{
 				nodePathInfo={selection.nodePathInfo}
 				sequence={track.sequence}
 				sourceActionsDisabled={sourceActionsDisabled}
+				sourceLocation={validatedLocation}
 			/>
 			<SequencePrecomposeAction
 				targets={[
 					{
 						nodePathInfo: selection.nodePathInfo,
 						displayName: track.sequence.displayName,
-						line: sourceLine,
+						line: validatedLocation.line,
 						singleChildComponent: track.sequence.singleChildComponent,
 					},
 				]}
@@ -491,8 +494,7 @@ const SequenceExpandedInspector: React.FC<{
 							<SequenceSourceQuickActions
 								selection={sequenceSelection}
 								track={track}
-								validatedSource={validatedLocation.source}
-								sourceLine={validatedLocation.line}
+								validatedLocation={validatedLocation}
 							/>
 						</InspectorQuickActionsSection>
 					</CollapsibleInspectorSection>
