@@ -318,7 +318,7 @@ const SequenceSourceQuickActions: React.FC<{
 						/>
 					)}
 				>
-					Split video from audio
+					Separate audio
 				</InspectorQuickAction>
 			) : null}
 			{mediaSequence !== null && mediaMetadata?.hasAudioTrack !== false ? (
@@ -332,7 +332,6 @@ const SequenceSourceQuickActions: React.FC<{
 							style={largeInspectorActionIconStyle}
 							color={color}
 							viewBox="-96 -16 704 544"
-							preserveAspectRatio="none"
 						/>
 					)}
 				>
