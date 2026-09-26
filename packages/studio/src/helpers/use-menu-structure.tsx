@@ -373,6 +373,7 @@ const useMenuStructureBase = ({
 	const resetZoomShortcut = useKeyboardShortcutLabel('resetZoom');
 	const toggleSnappingShortcut = useKeyboardShortcutLabel('toggleSnapping');
 	const checkerboardShortcut = useKeyboardShortcutLabel('toggleCheckerboard');
+	const pixelGridShortcut = useKeyboardShortcutLabel('togglePixelGrid');
 	const quickSwitcherShortcut = useKeyboardShortcutLabel('quickSwitcher');
 	const setInPointShortcut = useKeyboardShortcutLabel('setInPoint');
 	const setOutPointShortcut = useKeyboardShortcutLabel('setOutPoint');
@@ -583,7 +584,9 @@ const useMenuStructureBase = ({
 					},
 					{
 						id: 'pixel-grid',
-						keyHint: null,
+						keyHint: keyboardShortcutsDisabled
+							? null
+							: pixelGridShortcut || null,
 						label: 'Pixel Grid',
 						onClick: () => {
 							closeMenu();
@@ -1219,6 +1222,7 @@ const useMenuStructureBase = ({
 		askAIShortcut,
 		colorPickerShortcut,
 		checkerboardShortcut,
+		pixelGridShortcut,
 		clearInOutPointsShortcut,
 		goToFrameShortcut,
 		quickSwitcherShortcut,
