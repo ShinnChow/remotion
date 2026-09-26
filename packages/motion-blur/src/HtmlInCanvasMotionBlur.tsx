@@ -2,11 +2,11 @@ import React, {useCallback} from 'react';
 import {
 	Freeze,
 	HtmlInCanvas,
-	Internals,
+	type HtmlInCanvasOnPaint,
 	Interactive,
 	type InteractiveBaseProps,
 	type InteractivitySchema,
-	type HtmlInCanvasOnPaint,
+	Internals,
 	type SequenceControls,
 	useCurrentFrame,
 	useVideoConfig,
@@ -18,6 +18,7 @@ export type HtmlInCanvasMotionBlurProps = InteractiveBaseProps & {
 	readonly height: number;
 	readonly shutterAngle?: number;
 	readonly samples?: number;
+	readonly disabled?: boolean;
 };
 
 const htmlInCanvasMotionBlurSchema = {
@@ -41,6 +42,11 @@ const htmlInCanvasMotionBlurSchema = {
 		description: 'Samples',
 		hiddenFromList: false,
 		keyframable: false,
+	},
+	disabled: {
+		type: 'boolean',
+		default: false,
+		description: 'Disabled',
 	},
 } as const satisfies InteractivitySchema;
 
@@ -103,6 +109,7 @@ const HtmlInCanvasMotionBlurInner: React.FC<
 	height,
 	shutterAngle = 180,
 	samples = 8,
+	disabled = false,
 	from,
 	durationInFrames,
 	trimBefore,
@@ -133,7 +140,8 @@ const HtmlInCanvasMotionBlurInner: React.FC<
 		);
 	}
 
-	const actualSamples = shutterAngle === 0 ? 1 : samples;
+	// Keep the first sample mounted when blur is disabled so the canvas stays visible.
+	const actualSamples = disabled || shutterAngle === 0 ? 1 : samples;
 	const shutterInFrames = (shutterAngle / 360) * (playbackRate ?? 1);
 	const firstFrame = trimBefore ?? 0;
 	const visibleDuration = Math.max(
