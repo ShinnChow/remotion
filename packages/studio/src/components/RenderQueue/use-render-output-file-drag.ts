@@ -154,12 +154,7 @@ export const useRenderOutputFileDrag = (job: AnyRenderJob) => {
 					'DownloadURL',
 					`${mimeType}:${filename}:${source}`,
 				);
-				if (isClientRenderJob(job)) {
-					if (job.status !== 'done' || !job.getBlob) {
-						event.preventDefault();
-						return;
-					}
-
+				if (isClientRenderJob(job) && job.getBlob) {
 					draggedOutput = {
 						jobId: job.id,
 						content: {
